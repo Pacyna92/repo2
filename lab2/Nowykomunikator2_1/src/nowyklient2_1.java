@@ -22,25 +22,23 @@ public class nowyklient2_1 implements Runnable {
     }
 
     public void run() {
-        komunikat wiadomosc;
-        komunikat wiadomosci[] = {new komunikat("A"), new komunikat("B"), new komunikat("C"), new komunikat("D")};
+        komunikat wiadomosc = null;
+        komunikat wiadomosci[] = {new komunikat("A"), new komunikat("BB"), new komunikat("C")};
         try {
-            for (int i = wiadomosci.length - 1; i >= 0; i--) {
+            for (int i = 0; i < wiadomosci.length; i++) {
                 wyjscie.writeObject(wiadomosci[i]);
                 System.out.println("Klient wysyla: " + wiadomosci[i]);
-                wiadomosc = (komunikat) wejscie.readObject();
-                if (wiadomosc != null) {
-                    System.out.println("Klient odbiera: " + wiadomosc);
-                } else {
-                    break;
+                if(i == wiadomosci.length - 2) {
+                    continue;
                 }
-
+                wiadomosc = (komunikat) wejscie.readObject();
+                System.out.println("Klient odbiera: " + wiadomosc);
             }
             gniazdo_klienta.close();
             wyjscie.close();
             wejscie.close();
         } catch (Exception e) {
-            System.out.println("Wyjatek klienta 2 " + e);
+            e.printStackTrace();
         }
     }
 
