@@ -1,6 +1,8 @@
 package baza_3;
 
 import GUI.GUICustomer;
+import GUI.GUIPurchase_order;
+import GUI.WeWy;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -127,29 +129,89 @@ public class baza_3 {
             polaczenie.rollback();
         }
     }
+    
+    public String wyszukaj_osobe(String name) {
+        try {
+            sql = "SELECT * FROM CUSTOMER WHERE CUSTOMER.NAME = '" + name + "'";
+            krotki = polecenie.executeQuery(sql);
+            if (krotki.next()) {
+                return krotki.getString("CUSTOMER_ID");
+            }
+        } catch (SQLException e) {
+            System.out.println("Blad w wyszukiwaniu osoby " + e);
+        }
+        return null;
+    }
+    
+    public String wyszukaj_produkt(String kod) {
+        try {
+            sql = "SELECT * FROM Product WHERE PRODUCT_CODE = '" + kod + "'";
+            krotki = polecenie.executeQuery(sql);
+            if(krotki.next()) {
+                return krotki.getString("Product_ID");
+            }
+        } catch (SQLException e) {
+            System.out.println("Blad w wyszukiwaniu produktu " + e);
+        }
+        return null;
+    }
+    
+    public void wstaw_zlecenie(String[] dane) throws SQLException {
+        String id_osoby, id_produkt, id_order;
+        polaczenie.setAutoCommit(false);
+        try {
+            polecenie = polaczenie.createStatement();
+            if ((id_osoby = wyszukaj_osobe(dane[0])) == null) {
+                System.out.println("Brak osoby");
+                return;
+            }
+            if ((id_produkt = wyszukaj_produkt(dane[1])) == null) {
+                return;
+            }
+            if ((id_order = klucz_glowny("Order_num", "Purchase_order")) == null) {
+                System.out.println("null");
+                return;
+            }
+            sql = "INSERT INTO PURCHASE_ORDER (Order_num, customer_id, product_id, Quantity, "
+                    + "shipping_cost, sales_date, shipping_date, freight_company) VALUES ("
+                    + id_order + "," + id_osoby + "," + id_produkt + "," + dane[2] + "," + dane[3]
+                    + ",'" + dane[4] + "','" + dane[5] + "','" + dane[6] + "')";
+            polecenie.executeUpdate(sql);
+            polecenie.executeBatch();
+            polaczenie.commit();
+        } catch (BatchUpdateException e) {
+            blad(e);
+            polaczenie.rollback();
+        }
+    }
 
     static public void main(String arg[]) {
         baza_3 baza = new baza_3();
+        GUICustomer guicustomer = new GUICustomer();
+        GUIPurchase_order guipurchase_order = new GUIPurchase_order();
+        String[] tabela;
         ArrayList<String> lista;
         try {
             baza.polaczenie_z_baza();
             lista = baza.dane_tablicy_osob();
-            System.out.println(lista);
+            WeWy.wyString(lista);
             lista = baza.dane_zakupy_osob();
-            System.out.println(lista);
+            WeWy.wyString(lista);
             lista = baza.dane_tablicy_zakupy();
-            System.out.println(lista);
+            WeWy.wyString(lista);
+            tabela = guicustomer.wstaw_dane();
+            baza.wstaw_osobe(tabela);
+            lista = baza.dane_tablicy_osob();
+            WeWy.wyString(lista);
+            tabela = guipurchase_order.wstaw_dane_zlecenia();
+            baza.wstaw_zlecenie(tabela);
+            lista = baza.dane_zakupy_osob();
+            WeWy.wyString(lista);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-            while(null != (e = e.getNextException())) {
+            while (null != (e = e.getNextException())) {
                 System.out.println(e.getMessage());
             }
-        }
-        GUICustomer customer = new GUICustomer();
-        try {
-            baza.wstaw_osobe(customer.wstaw_dane());
-        } catch (SQLException ex) {
-            Logger.getLogger(baza_3.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
